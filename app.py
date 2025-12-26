@@ -25,10 +25,28 @@ def prev_image():
         st.session_state.image_index = len(image_files) - 1  
 
 def move_and_delete_image(img_path, img_dest_folder):
+    if not os.path.isdir(img_dest_folder):
+        print("Destination class folder doesn't exist - creating it")
+        os.makedirs(img_dest_folder)
+
+    print(f'Moving {img_path} to {img_dest_folder}')
     print("move_and_delete_image")
     shutil.copy(img_path, img_dest_folder)
     os.remove(img_path)
 #Define auxiliary navigation functions   
+
+def select_class():
+    image_class = st.selectbox(
+        "Select class", 
+        os.listdir(CLASS_FOLDER_ROOT),
+        index=None,
+        placeholder="Select or type a new option...",
+        accept_new_options=True,
+        on_change=None
+    )
+    
+    return image_class
+
 
 #UI
 st.title("Image Iterator")
@@ -44,18 +62,11 @@ if image_files:
     with col2:
         st.button("Next", on_click=next_image)
     with col3:
-        image_class = st.selectbox(
-            "Select class", 
-            os.listdir(CLASS_FOLDER_ROOT),
-            index=None,
-            placeholder="Select or type a new option...",
-            accept_new_options=True,
-            on_change=None
-            )
+        image_class = select_class()
     with col4:
         if image_class:
             destination_path = os.path.join(CLASS_FOLDER_ROOT, image_class)
-            st.button("Confirm", on_click=move_and_delete_image(current_img_path, destination_path))
+            st.button("Confirm", on_click=move_and_delete_image, args=[current_img_path, destination_path])
     st.write(f"Image {st.session_state.image_index + 1} of {len(image_files)}")
     st.write(f"Choosing image {current_img_path}")
 else:
