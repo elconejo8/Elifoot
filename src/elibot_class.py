@@ -4,12 +4,31 @@ import pygetwindow as gw
 import pyautogui
 from PIL import ImageGrab, Image
 import numpy as np
+import torch
+from torchvision.transforms import v2
+from torch import nn
+
+transforms = v2.Compose([
+    v2.ToTensor(),
+    v2.RandomHorizontalFlip(p=0.5),
+    v2.ToDtype(torch.float32, scale=True),
+    v2.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+    v2.RandomResizedCrop(size=(120, 120), antialias=True),
+])
+
+def make_single_pred(img, model, transform):
+    img_transform = transform(img)
+    
+    softmax = nn.Softmax(dim=1)
+    return softmax(model(img_transform.unsqueeze(0))).max(axis=1).indices.tolist()[0]
+
 
 class EliBot:
-    def __init__(self, game_path, dosbox_folder_path):
+    def __init__(self, game_path, dosbox_folder_path, model_path):
 
         self.game_path = game_path
         self.dosbox_folder_path = dosbox_folder_path
+        self.model = torch.load(model_path, weights_only=False)
 
         """
         Launch game in DOSBox (DOS emulator)
@@ -52,18 +71,6 @@ class EliBot:
             # Fallback: capture full screen
             screenshot = ImageGrab.grab()
             return np.array(screenshot)
-    
-    def analyze_screen(self, screen):
-        """Analyze screen to extract game state"""
-        # Convert to grayscale for analysis
-        from PIL import Image
-        img = Image.fromarray(screen)
-        gray = img.convert('L')
-        
-
-        state = {}
-        
-        return state
 
 
     def send_key(self, key):
@@ -83,13 +90,32 @@ class EliBot:
 
     def random_play(self, save_screens=True):
         """Play game randomly saving screen before pressing keys"""
-        for key_name in ['enter', 'f1', 'f3', 'f6', 'f8', 'n', 'esc']:
-            time.sleep(5)
-            if save_screens:
-                screen = self.capture_screen()
-                screen = Image.fromarray(screen)
-                screen.save("Data\Screenshots\{}_enter.jpeg".format(time.time()))
-            self.send_key(key_name)
+        while True:
+            for key_name in ['enter', 'f1', 'f3', 'f6', 'f8', 'n', 'esc']:
+                print(key_name, save_screens)
+                time.sleep(5)
+                if save_screens:
+                    screen = self.capture_screen()
+                    screen_img = Image.fromarray(screen)
+                    pred_class = make_single_pred(screen_img, model=self.model, transform=transforms)
+                    screen_img.save("Data\Screenshots\{}_{}.jpeg".format(time.time(), pred_class))
+                self.send_key(key_name)
+
+    def random_play(self, save_screens=True):
+        """Play game randomly saving screen before pressing keys"""
+        while True:
+            for key_name in ['enter', 'f1', 'f3', 'f6', 'f8', 'n', 'esc']:
+                print(key_name, save_screens)
+                time.sleep(5)
+                if save_screens:
+                    screen = self.capture_screen()
+                    screen_img = Image.fromarray(screen)
+                    pred_class = make_single_pred(screen_img, model=self.model, transform=transforms)
+                    if pred_class in []
+                    screen_img.save("Data\Screenshots\{}_{}.jpeg".format(time.time(), pred_class))
+                self.send_key(key_name)
+
+
 
 
 #Simulating decisions and saving the images each step
