@@ -24,11 +24,12 @@ def make_single_pred(img, model, transform):
 
 
 class EliBot:
-    def __init__(self, game_path, dosbox_folder_path, model_path):
+    def __init__(self, game_path, dosbox_folder_path, model_path, classes_label_conversion):
 
         self.game_path = game_path
         self.dosbox_folder_path = dosbox_folder_path
         self.model = torch.load(model_path, weights_only=False)
+        self.classes_label_conversion = classes_label_conversion
 
         """
         Launch game in DOSBox (DOS emulator)
@@ -111,8 +112,11 @@ class EliBot:
                     screen = self.capture_screen()
                     screen_img = Image.fromarray(screen)
                     pred_class = make_single_pred(screen_img, model=self.model, transform=transforms)
-                    if pred_class in []
-                    screen_img.save("Data\Screenshots\{}_{}.jpeg".format(time.time(), pred_class))
+                    pred_class = self.classes_label_conversion.loc[self.classes_label_conversion['Label'] == pred_class, 'Class'].item()
+                    if pred_class in ['Class_tables', 'Cup_draw', 'Cup_game', 'Game', 'Game_extra_time', 'Manager_changes', 'Top_scorers']:
+                        time.sleep(3)
+                    else: 
+                        screen_img.save("Data\Screenshots\{}_{}.jpeg".format(time.time(), pred_class))
                 self.send_key(key_name)
 
 
