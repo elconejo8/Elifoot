@@ -1,4 +1,5 @@
 /.venv
 /Data
+/mlruns
 
 .env

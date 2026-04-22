@@ -105,7 +105,7 @@ class EliBot:
     def random_play(self, save_screens=True):
         """Play game randomly saving screen before pressing keys"""
         while True:
-            for key_name in ['enter', 'f1', 'f3', 'f6', 'f8', 'n', 'esc']:
+            for key_name in ['esc', 'enter', 'f1', 'f3', 'f6', 'f8', 'n']:
                 print(key_name, save_screens)
                 time.sleep(5)
                 if save_screens:
@@ -118,6 +118,28 @@ class EliBot:
                     else: 
                         screen_img.save("Data\Screenshots\{}_{}.jpeg".format(time.time(), pred_class))
                 self.send_key(key_name)
+
+    def almost_random_play(self, save_screens=True):
+        """Play game by trying to just press relevant keys for each screen """
+        while True:
+            screen = self.capture_screen()
+            screen_img = Image.fromarray(screen)
+            pred_class = make_single_pred(screen_img, model=self.model, transform=transforms)
+            pred_class = self.classes_label_conversion.loc[self.classes_label_conversion['Label'] == pred_class, 'Class'].item()
+            print('Predicted class: {}'.format(pred_class))
+            if pred_class in ['Class_tables', 'Cup_draw', 'Cup_game', 'Game', 'Game_extra_time', 'Manager_changes', 'Top_scorers']:
+                time.sleep(3)
+                key_name = 'enter'
+            elif pred_class in ['Game_Interval']:
+                self.send_key('esc')
+            elif pred_class in ['Salary_auction']:
+                self.send_key('enter')
+            elif pred_class in ['Squad']:
+                self.send_key(('alt', 'f3'))
+            else: 
+                key_name = np.random.choice(['esc', 'enter', 'f1', 'f3', 'f6', 'f8', 'n'])
+            screen_img.save("Data\Screenshots\{}_{}.jpeg".format(time.time(), pred_class))
+            self.send_key(key_name)
 
 
 
